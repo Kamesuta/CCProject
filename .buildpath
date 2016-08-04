@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<buildpath>
+	<buildpathentry kind="con" path="org.eclipse.ldt.ExecutionEnvironmentContainer/lua/5.1"/>
+	<buildpathentry kind="src" path="src"/>
+	<buildpathentry external="true" kind="lib" path="E:/data/programs/Minecraft/ComputerCraft/rom/assets/computercraft/lua"/>
+</buildpath>
