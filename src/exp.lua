@@ -157,23 +157,6 @@ end
 DataBase.get = function(this, ...)
   if this.db then
     local gets = {...}
---      local check = true
---      for _,get in ipairs(gets) do
---        local row = this.db.data.xedni[get[this.db.data.primary]]
---        for _col,_value in pairs(get) do
---          if this.db.data.obj[_col] and this.db.data.obj[_col][row]~=_value then
---            check = false
---            break
---          end
---        end
---        if check then
---          break
---        end
---      end
---      if check then
---        table.insert(rows, row)
---      end
---    end
     local pendrows
     local onlyprimary = false
     if this.db.data.primary then
@@ -197,8 +180,9 @@ DataBase.get = function(this, ...)
 
     local rows = {}
     for _,_row in ipairs(pendrows) do
-      local check = true
+      local checks = false
       for _,get in ipairs(gets) do
+        local check = true
         for _col,_value in pairs(get) do
           if this.db.data.obj[_col] and this.db.data.obj[_col][_row]~=_value then
             check = false
@@ -206,10 +190,11 @@ DataBase.get = function(this, ...)
           end
         end
         if check then
+          checks = true
           break
         end
       end
-      if check then
+      if checks then
         table.insert(rows, _row)
       end
     end
@@ -288,5 +273,6 @@ end
 db = DataBase.new()
 db:init{a=DataBase.PRIMARY_KEY, "b","c"}
 db:put{a="x",b="y",c="z"}
-a=db:get{b="y"}
+db:put{a="xx",b="yy",c="zz"}
+a=db:get({a="x"},{a="xx"})
 print(a)

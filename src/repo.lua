@@ -415,8 +415,9 @@ DataBase.get = function(this, ...)
 
     local rows = {}
     for _,_row in ipairs(pendrows) do
-      local check = true
+      local checks = false
       for _,get in ipairs(gets) do
+        local check = true
         for _col,_value in pairs(get) do
           if this.db.data.obj[_col] and this.db.data.obj[_col][_row]~=_value then
             check = false
@@ -424,10 +425,11 @@ DataBase.get = function(this, ...)
           end
         end
         if check then
+          checks = true
           break
         end
       end
-      if check then
+      if checks then
         table.insert(rows, _row)
       end
     end
