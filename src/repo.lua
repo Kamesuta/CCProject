@@ -335,49 +335,20 @@ DataBase.clear = function(this)
   this:init(init)
   return this
 end
-DataBase.check = function(this, puts)
-  local rows = {}
-  if puts then
-    for _,_put in ipairs(puts) do
-      local check = true
-      if not this.db.data.primary or _put[this.db.data.primary]~=nil then
-        local row
-        if this.db.data.primary then
-          row = this.db.data.xedni[_put[this.db.data.primary]]
-        end
-        row = row or #this.db.data.index+1
-
-        for _col,_dbcol in pairs(this.db.data.obj) do
-          if not this.db.meta[_col](_dbcol, row, _put[_col]) then
-            check = false
-          end
-          if not check then
-            break
-          end
-        end
-
-        if check then
-          table.insert(rows, row)
-        end
-      end
-    end
-  end
-  return rows
-end
 DataBase.put = function(this, puts)
   if this.db then
     if puts then
-      for _,_put in ipairs(puts) do
+      for _,put in ipairs(puts) do
         local check = true
-        if not this.db.data.primary or _put[this.db.data.primary]~=nil then
+        if not this.db.data.primary or put[this.db.data.primary]~=nil then
           local row
           if this.db.data.primary then
-            row = this.db.data.xedni[_put[this.db.data.primary]]
+            row = this.db.data.xedni[put[this.db.data.primary]]
           end
           row = row or #this.db.data.index+1
 
           for _col,_dbcol in pairs(this.db.data.obj) do
-            if not this.db.meta[_col](_dbcol, row, _put[_col]) then
+            if not this.db.meta[_col](_dbcol, row, put[_col]) then
               check = false
             end
             if not check then
@@ -386,12 +357,12 @@ DataBase.put = function(this, puts)
           end
 
           if check then
-            for _col,_value in pairs(_put) do
+            for _col,_value in pairs(put) do
               this.db.data.obj[_col][row] = _value
             end
             if this.db.data.primary then
-              this.db.data.index[row] = _put[this.db.data.primary]
-              this.db.data.xedni[_put[this.db.data.primary]] = row
+              this.db.data.index[row] = put[this.db.data.primary]
+              this.db.data.xedni[put[this.db.data.primary]] = row
             else
               this.db.data.index[row] = row
             end
@@ -403,7 +374,7 @@ DataBase.put = function(this, puts)
   return this
 end
 DataBase._search = function(this, search)
-  if not search or not #search>0 then
+  if not (search and #search>0) then
     search = {{}}
   end
   local pendrows

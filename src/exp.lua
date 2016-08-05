@@ -117,36 +117,37 @@ DataBase.clear = function(this)
   this:init(init)
   return this
 end
-DataBase.put = function(this, ...)
+DataBase.put = function(this, puts)
   if this.db then
-    local puts = {...}
-    for _,put in ipairs(puts) do
-      local check = true
-      if not this.db.data.primary or put[this.db.data.primary]~=nil then
-        local row
-        if this.db.data.primary then
-          row = this.db.data.xedni[put[this.db.data.primary]]
-        end
-        row = row or #this.db.data.index+1
-
-        for _col,_dbcol in pairs(this.db.data.obj) do
-          if not this.db.meta[_col](_dbcol, row, put[_col]) then
-            check = false
-          end
-          if not check then
-            break
-          end
-        end
-
-        if check then
-          for _col,_value in pairs(put) do
-            this.db.data.obj[_col][row] = _value
-          end
+    if puts then
+      for _,put in ipairs(puts) do
+        local check = true
+        if not this.db.data.primary or put[this.db.data.primary]~=nil then
+          local row
           if this.db.data.primary then
-            this.db.data.index[row] = put[this.db.data.primary]
-            this.db.data.xedni[put[this.db.data.primary]] = row
-          else
-            this.db.data.index[row] = row
+            row = this.db.data.xedni[put[this.db.data.primary]]
+          end
+          row = row or #this.db.data.index+1
+
+          for _col,_dbcol in pairs(this.db.data.obj) do
+            if not this.db.meta[_col](_dbcol, row, put[_col]) then
+              check = false
+            end
+            if not check then
+              break
+            end
+          end
+
+          if check then
+            for _col,_value in pairs(put) do
+              this.db.data.obj[_col][row] = _value
+            end
+            if this.db.data.primary then
+              this.db.data.index[row] = put[this.db.data.primary]
+              this.db.data.xedni[put[this.db.data.primary]] = row
+            else
+              this.db.data.index[row] = row
+            end
           end
         end
       end
@@ -154,51 +155,56 @@ DataBase.put = function(this, ...)
   end
   return this
 end
-DataBase.get = function(this, ...)
+DataBase._search = function(this, search)
+  if not (search and #search>0) then
+    search = {{}}
+  end
+  local pendrows
+  local onlyprimary = false
+  if this.db.data.primary then
+    pendrows = {}
+    onlyprimary = true
+    for _,_get in ipairs(search) do
+      if _get[this.db.data.primary]~=nil then
+        table.insert(pendrows, this.db.data.xedni[_get[this.db.data.primary]])
+      else
+        onlyprimary = false
+        break
+      end
+    end
+  end
+  if not onlyprimary then
+    pendrows = {}
+    for _row,_ in pairs(this.db.data.index) do
+      table.insert(pendrows, _row)
+    end
+  end
+
+  local rows = {}
+  for _,_row in ipairs(pendrows) do
+    local checks = false
+    for _,get in ipairs(search) do
+      local check = true
+      for _col,_value in pairs(get) do
+        if this.db.data.obj[_col] and this.db.data.obj[_col][_row]~=_value then
+          check = false
+          break
+        end
+      end
+      if check then
+        checks = true
+        break
+      end
+    end
+    if checks then
+      table.insert(rows, _row)
+    end
+  end
+  return rows
+end
+DataBase.get = function(this, gets)
   if this.db then
-    local gets = {...}
-    local pendrows
-    local onlyprimary = false
-    if this.db.data.primary then
-      pendrows = {}
-      onlyprimary = true
-      for _,_get in ipairs(gets) do
-        if _get[this.db.data.primary]~=nil then
-          table.insert(pendrows, this.db.data.xedni[_get[this.db.data.primary]])
-        else
-          onlyprimary = false
-          break
-        end
-      end
-    end
-    if not onlyprimary then
-      pendrows = {}
-      for _row,_ in pairs(this.db.data.index) do
-        table.insert(pendrows, _row)
-      end
-    end
-
-    local rows = {}
-    for _,_row in ipairs(pendrows) do
-      local checks = false
-      for _,get in ipairs(gets) do
-        local check = true
-        for _col,_value in pairs(get) do
-          if this.db.data.obj[_col] and this.db.data.obj[_col][_row]~=_value then
-            check = false
-            break
-          end
-        end
-        if check then
-          checks = true
-          break
-        end
-      end
-      if checks then
-        table.insert(rows, _row)
-      end
-    end
-
+    local rows = this:_search(gets)
     local row2 = {}
     for _,_row in ipairs(rows) do
       local row3 = {}
@@ -210,42 +216,21 @@ DataBase.get = function(this, ...)
     return row2
   end
 end
--- TODO
---DataBase.rm = function(this, ...)
---  if this.db then
---    local rms = {...}
---    for _,rm in ipairs(rms) do
---      local check = true
---      if this.db.data.primary or rm[this.db.data.primary]~=nil then
---        local row
---        if this.db.data.primary then
---          row = this.db.data.xedni[rm[this.db.data.primary]]
---        end
---        row = row or #this.db.data.index+1
---
---        for _col,_dbcol in pairs(this.db.data) do
---          if not this.db.meta[_col](_dbcol, row, rm[_col]) then
---            check = false
---          end
---          if not check then
---            break
---          end
---        end
---
---        if check then
---          for _col,_ in pairs(rm) do
---            this.db.data.obj[_col][row] = nil
---          end
---          this.db.data.index[row] = nil
---          if this.db.data.primary then
---            this.db.data.xedni[rm[this.db.data.primary]] = nil
---          end
---        end
---      end
---    end
---  end
---  return this
---end
+DataBase.rm = function(this, rms)
+  if this.db then
+    local rows = this:_search(rms)
+    for _,_row in ipairs(rows) do
+      for _col,_ in pairs(this.db.data.obj) do
+        this.db.data.obj[_col][_row] = nil
+      end
+      if this.db.data.primary then
+        this.db.data.xedni[this.db.data.index[_row]] = nil
+      end
+      this.db.data.index[_row] = nil
+    end
+  end
+  return this
+end
 DataBase.copy = function(this, from, deep)
   Util.extend(not not deep, this.db, from.db)
 end
@@ -272,7 +257,8 @@ end
 
 db = DataBase.new()
 db:init{a=DataBase.PRIMARY_KEY, "b","c"}
-db:put{a="x",b="y",c="z"}
-db:put{a="xx",b="yy",c="zz"}
-a=db:get({a="x"},{a="xx"})
+db:put{{a="x",b="y",c="z"},{a="xx",b="yy",c="zz"}}
+db:put{{a="x",b="y",c="z"},{a="xx",b="yy",c="zz"}}
+db:rm{{a="x"},{b="yy"}}
+a=db:get()
 print(a)
