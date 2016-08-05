@@ -375,7 +375,6 @@ end
 DataBase.get = function(this, ...)
   if this.db then
     local gets = {...}
-    local rows = {}
 --      local check = true
 --      for _,get in ipairs(gets) do
 --        local row = this.db.data.xedni[get[this.db.data.primary]]
@@ -413,21 +412,24 @@ DataBase.get = function(this, ...)
         table.insert(pendrows, _row)
       end
     end
-    
-    local check = true
-    for _,get in ipairs(gets) do
-      for _col,_value in pairs(get) do
-        if this.db.data.obj[_col] and this.db.data.obj[_col][_row]~=_value then
-          check = false
+
+    local rows = {}
+    for _,_row in ipairs(pendrows) do
+      local check = true
+      for _,get in ipairs(gets) do
+        for _col,_value in pairs(get) do
+          if this.db.data.obj[_col] and this.db.data.obj[_col][_row]~=_value then
+            check = false
+            break
+          end
+        end
+        if check then
           break
         end
       end
       if check then
-        break
+        table.insert(rows, _row)
       end
-    end
-    if check then
-      table.insert(rows, _row)
     end
 
     local row2 = {}
