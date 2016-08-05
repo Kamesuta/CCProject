@@ -335,9 +335,8 @@ DataBase.clear = function(this)
   this:init(init)
   return this
 end
-DataBase.put = function(this, ...)
+DataBase.put = function(this, puts)
   if this.db then
-    local puts = {...}
     for _,put in ipairs(puts) do
       local check = true
       if not this.db.data.primary or put[this.db.data.primary]~=nil then
@@ -372,26 +371,8 @@ DataBase.put = function(this, ...)
   end
   return this
 end
-DataBase.get = function(this, ...)
+DataBase.get = function(this, gets)
   if this.db then
-    local gets = {...}
---      local check = true
---      for _,get in ipairs(gets) do
---        local row = this.db.data.xedni[get[this.db.data.primary]]
---        for _col,_value in pairs(get) do
---          if this.db.data.obj[_col] and this.db.data.obj[_col][row]~=_value then
---            check = false
---            break
---          end
---        end
---        if check then
---          break
---        end
---      end
---      if check then
---        table.insert(rows, row)
---      end
---    end
     local pendrows
     local onlyprimary = false
     if this.db.data.primary then
