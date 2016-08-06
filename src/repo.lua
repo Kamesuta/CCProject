@@ -335,28 +335,33 @@ DataBase.clear = function(this)
   this:init(init)
   return this
 end
+DataBase._rowspace = function(this, put)
+  local row
+  if this.db.data.primary then
+    row = this.db.data.xedni[put[this.db.data.primary]]
+  end
+  row = row or #this.db.data.index+1
+  return row
+end
+DataBase._insertable = function(this, put, row)
+  local check = true
+  for _col,_dbcol in pairs(this.db.data.obj) do
+    if not this.db.meta[_col](_dbcol, row, put[_col]) then
+      check = false
+    end
+    if not check then
+      break
+    end
+  end
+  return check
+end
 DataBase.put = function(this, puts)
   if this.db then
     if puts then
       for _,put in ipairs(puts) do
-        local check = true
         if not this.db.data.primary or put[this.db.data.primary]~=nil then
-          local row
-          if this.db.data.primary then
-            row = this.db.data.xedni[put[this.db.data.primary]]
-          end
-          row = row or #this.db.data.index+1
-
-          for _col,_dbcol in pairs(this.db.data.obj) do
-            if not this.db.meta[_col](_dbcol, row, put[_col]) then
-              check = false
-            end
-            if not check then
-              break
-            end
-          end
-
-          if check then
+          local row = this:_rowspace(put)
+          if this:_insertable(put, row) then
             for _col,_value in pairs(put) do
               this.db.data.obj[_col][row] = _value
             end
@@ -373,52 +378,75 @@ DataBase.put = function(this, puts)
   end
   return this
 end
+DataBase._checkrow = function(this, search, row)
+  local checks = false
+  for _,get in ipairs(search) do
+    local check = true
+    for _col,_value in pairs(get) do
+      if this.db.data.obj[_col] and this.db.data.obj[_col][row]~=_value then
+        check = false
+        break
+      end
+    end
+    if check then
+      checks = true
+      break
+    end
+  end
+  return checks
+end
 DataBase._search = function(this, search)
   if not (search and #search>0) then
     search = {{}}
   end
   local pendrows
-  local onlyprimary = false
   if this.db.data.primary then
     pendrows = {}
-    onlyprimary = true
     for _,_get in ipairs(search) do
       if _get[this.db.data.primary]~=nil then
         table.insert(pendrows, this.db.data.xedni[_get[this.db.data.primary]])
       else
-        onlyprimary = false
+        pendrows = nil
         break
       end
     end
   end
-  if not onlyprimary then
-    pendrows = {}
-    for _row,_ in pairs(this.db.data.index) do
-      table.insert(pendrows, _row)
-    end
-  end
-
   local rows = {}
-  for _,_row in ipairs(pendrows) do
-    local checks = false
-    for _,get in ipairs(search) do
-      local check = true
-      for _col,_value in pairs(get) do
-        if this.db.data.obj[_col] and this.db.data.obj[_col][_row]~=_value then
-          check = false
-          break
-        end
-      end
-      if check then
-        checks = true
-        break
+  if pendrows then
+    for _,_row in ipairs(pendrows) do
+      if this:_checkrow(search, _row) then
+        table.insert(rows, _row)
       end
     end
-    if checks then
-      table.insert(rows, _row)
+  else
+    for _row,_ in pairs(this.db.data.index) do
+      if this:_checkrow(search, _row) then
+        table.insert(rows, _row)
+      end
     end
   end
   return rows
+end
+DataBase.update = function(this, changes)
+  if this.db then
+    for _target,_change in ipairs(changes) do
+      local rows = this:_search(_target)
+      for _,_row in ipairs(rows) do
+        if this:_insertable(_change, _row) then
+          for _col,_value in pairs(_change) do
+            this.db.data.obj[_col][_row] = _value
+          end
+          if this.db.data.primary then
+            this.db.data.index[_row] = _change[this.db.data.primary]
+            this.db.data.xedni[_change[this.db.data.primary]] = _row
+          else
+            this.db.data.index[_row] = _row
+          end
+        end
+      end
+    end
+  end
+  return this
 end
 DataBase.get = function(this, gets)
   if this.db then
