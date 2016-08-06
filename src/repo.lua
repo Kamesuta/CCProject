@@ -436,6 +436,11 @@ DataBase.update = function(this, changes)
           for _col,_value in pairs(_change) do
             this.db.data.obj[_col][_row] = _value
           end
+          if this.db.data.primary and _change[this.db.data.primary]~=nil then
+            this.db.data.xedni[this.db.data.index[_row]] = nil
+            this.db.data.index[_row] = _change[this.db.data.primary]
+            this.db.data.xedni[_change[this.db.data.primary]] = _row
+          end
         end
       end
     end
