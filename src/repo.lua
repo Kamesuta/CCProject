@@ -355,7 +355,7 @@ DataBase._insertable = function(this, put, row)
   end
   return check
 end
-DataBase.put = function(this, puts)
+DataBase.insert = function(this, puts)
   if this.db then
     if puts then
       for _,put in ipairs(puts) do
