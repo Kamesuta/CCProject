@@ -211,18 +211,12 @@ DataBase._search = function(this, search)
 end
 DataBase.update = function(this, changes)
   if this.db then
-    for _target,_change in ipairs(changes) do
+    for _target,_change in pairs(changes) do
       local rows = this:_search(_target)
       for _,_row in ipairs(rows) do
         if this:_insertable(_change, _row) then
           for _col,_value in pairs(_change) do
             this.db.data.obj[_col][_row] = _value
-          end
-          if this.db.data.primary then
-            this.db.data.index[_row] = _change[this.db.data.primary]
-            this.db.data.xedni[_change[this.db.data.primary]] = _row
-          else
-            this.db.data.index[_row] = _row
           end
         end
       end
@@ -283,8 +277,16 @@ DataBase.NOT_NULL = function(dbcol, row, value)
   return value~=nil
 end
 
+dofile'src/textutils.lua'
 db = DataBase.new()
 db:init{a=DataBase.PRIMARY_KEY, "b","c"}
 db:put{{a="x",b="y",c="z"},{a="xx",b="yy",c="zz"}}
+db:update({[{{a="x"},{b="yy"}}] = {b="h",c="j"}})
 a=db:get()
-print(a)
+
+local ok, serialised = pcall( textutils.serialise, a )
+if ok then
+  print( serialised )
+else
+  print( tostring( a ) )
+end
