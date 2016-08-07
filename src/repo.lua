@@ -255,7 +255,7 @@ Pastebin.fetch = function(this)
   return this
 end
 Pastebin.add = function(this, add)
-  this.localrepo:insert{this.remoterepo:get(add)}
+  this.localrepo:insert(this.remoterepo:get(add))
   this.localrepo:save(this.localrepocode)
   return this
 end
@@ -266,7 +266,7 @@ Pastebin.merge = function(this)
     local remoteentry = remoteentries[i]
     if remoteentry.version~=localentry.version then
       Code.new():fromGet('http://pastebin.com/raw/'..localentry.id):save(Reference.localRepo..localentry.name)
-      this.localrepo:insert(remoteentry)
+      this.localrepo:insert{remoteentry}
     else
       Code.new():fromFile(Reference.localRepo..localentry.name):fromGet('http://pastebin.com/raw/'..localentry.id):save()
     end
