@@ -243,7 +243,7 @@ Pastebin.fetch = function(this)
       local title = v.paste_title:value()
       local name = title:match('^.-#(.-)#.-$')
       local version = title:match('^.-@(.-)@.-$')
-      this.remoterepo:put{
+      this.remoterepo:insert{
         id = id,
         title = title,
         name = name,
@@ -254,19 +254,19 @@ Pastebin.fetch = function(this)
   end
   return this
 end
-Pastebin.add = function(this, ...)
-  this.localrepo:put(this.remoterepo:get(...))
+Pastebin.add = function(this, add)
+  this.localrepo:insert{this.remoterepo:get(add)}
   this.localrepo:save(this.localrepocode)
   return this
 end
 Pastebin.merge = function(this)
-  local remoteentries = this.remoterepo:get{}
-  local localentries = this.localrepo:get{}
+  local remoteentries = this.remoterepo:get()
+  local localentries = this.localrepo:get()
   for i,localentry in pairs(localentries) do
     local remoteentry = remoteentries[i]
     if remoteentry.version~=localentry.version then
       Code.new():fromGet('http://pastebin.com/raw/'..localentry.id):save(Reference.localRepo..localentry.name)
-      localrepo:put(remoteentry)
+      this.localrepo:insert(remoteentry)
     else
       Code.new():fromFile(Reference.localRepo..localentry.name):fromGet('http://pastebin.com/raw/'..localentry.id):save()
     end
