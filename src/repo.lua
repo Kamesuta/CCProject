@@ -153,13 +153,15 @@ Code.save = function(this, path)
     if p~=this.from then
       if p then
         local dir,name = p:match("^(.*/)(.-)$")
-        if not fs.isDir(dir) then
+        if not fs.exists(dir) then
           fs.makeDir(dir)
         end
-        if #name>0 then
+        if fs.isDir(dir) and #name>0 then
           local file = fs.open(p, 'w')
           file.write(this.code)
           file.close()
+        else
+          error("non-directory file exsists", 2)
         end
       end
     end
