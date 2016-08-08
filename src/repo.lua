@@ -251,12 +251,12 @@ Pastebin.fetch = function(this)
       local title = v.paste_title:value()
       local name = title:match('^.-#(.-)#.-$')
       local version = title:match('^.-@(.-)@.-$')
-      this.remoterepo:insert{
+      this.remoterepo:insert{{
         id = id,
         title = title,
         name = name,
         version = version,
-      }
+      }}
     end
     this.remoterepo:save(this.remoterepocode)
   end
