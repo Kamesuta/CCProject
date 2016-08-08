@@ -1,8 +1,8 @@
 Reference = {
-  localRepo = 'repo/',
-  localSystem = '.repo/',
-  remoteDB = '.repo/remote.json',
-  localDB = '.repo/local.json',
+  localRepo = 'bnn/',
+  localSystem = '.bnn/',
+  remoteDB = '.bnn/remote.json',
+  localDB = '.bnn/local.json',
   dev_key = '8eb670559bf070612041dc14d0502248',
   user_key = 'd7f12b0137d6ba187cef85295ca646b7',
 }
