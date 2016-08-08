@@ -152,9 +152,15 @@ Code.save = function(this, path)
     local p = path or this.file
     if p~=this.from then
       if p then
-        local file = fs.open(p, 'w')
-        file.write(this.code)
-        file.close()
+        local dir,name = p:match("^(.*/)(.-)$")
+        if not fs.isDir(dir) then
+          fs.makeDir(dir)
+        end
+        if #name>0 then
+          local file = fs.open(p, 'w')
+          file.write(this.code)
+          file.close()
+        end
       end
     end
   end
