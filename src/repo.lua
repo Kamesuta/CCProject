@@ -262,6 +262,7 @@ N.Pastebin.get = function(this, filter)
   return this.localrepo:get(filter)
 end
 N.Pastebin.code = function(this, filter)
+  this:add(filter)
   this:merge(filter)
   local codes = {}
   local entries = this.localrepo:get(filter)
@@ -271,7 +272,7 @@ N.Pastebin.code = function(this, filter)
   return codes
 end
 N.Pastebin.add = function(this, filter)
-  if this.localrepo:exists(filter) then
+  if not this.localrepo:exists(filter) then
     this.localrepo:insert(this.remoterepo:get(filter))
     this.localrepo:save(this.localrepocode)
   end
