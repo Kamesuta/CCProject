@@ -105,9 +105,18 @@ N.Code.fromGet = function(this, url, ...)
   end
   return this
 end
-N.Code.fromPost = function(this, url, ...)
+N.Code.fromPost = function(this, url, data)
   if not this.code then
-    local data = N.Util.join({...}, '&')
+    local data1 = {}
+    for _1,_2 in pairs(data) do
+      local col, limit
+      if type(_1)=='number' then
+        table.insert(data1, _2)
+      else
+        table.insert(data1, _1..'='.._2)
+      end
+    end
+    local data = N.Util.join(data1, '&')
     local response = http.post(url, data)
     if response then
       this.code = response.readAll()
@@ -233,9 +242,12 @@ N.Pastebin.fetch = function(this)
   this.remoterepo:clear()
   local remoteRepoCode = N.Code.new():fromPost(
     'http://pastebin.com/api/api_post.php',
-    'api_option=list',
-    'api_dev_key='..N.Reference.dev_key,
-    'api_user_key='..N.Reference.user_key
+    {
+      api_option = 'list',
+      api_dev_key = N.Reference.dev_key,
+      api_user_key = N.Reference.user_key,
+      api_results_limit = 1000,
+    }
   )
   if remoteRepoCode:exists() then
     local remoteRepoData = N.Lib.XML.Parser.new():ParseXmlText(remoteRepoCode:get())
