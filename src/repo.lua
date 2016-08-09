@@ -1,4 +1,4 @@
-N = {}
+local N = {}
 
 N.Reference = {
   localRepo = 'bnn/',
@@ -34,51 +34,52 @@ N.Util = {
     end
 
     return first
-  end,
-  extend = function(...)
-    local arguments = {...}
-    local options, src, clone
-    local target = arguments[ 1 ] or {}
-    local i = 2
-    local length = #arguments
-    local deep = false
-    -- Handle a deep copy situation
-    if type(target)=='boolean' then
-      deep = target
-      -- Skip the boolean and the target
-      target = arguments[ i ] or {}
-      i = i+1
-    end
-    -- Handle case when target is a string or something (possible in deep copy)
-    if type(target)~='table' then
-      target = {}
-    end
-    for j=i, length do
-      -- Only deal with non-null/undefined values
-      options = arguments[ j ]
-      if options~=nil then
-        -- Extend the base object
-        for name, copy in pairs(options) do
-          src = target[ name ]
-          -- Prevent never-ending loop
-          if target~=copy then
-            -- Recurse if we're merging plain objects or arrays
-            if deep and copy and type(copy)=='table' then
-              clone = src or {}
-              -- Never move original objects, clone them
-              target[ name ] = N.Util.extend( deep, clone, copy )
-            -- Don't bring in undefined values
-            elseif copy~=nil then
-              target[ name ] = copy
-            end
+  end
+}
+
+N.extend = function(...)
+  local arguments = {...}
+  local options, src, clone
+  local target = arguments[ 1 ] or {}
+  local i = 2
+  local length = #arguments
+  local deep = false
+  -- Handle a deep copy situation
+  if type(target)=='boolean' then
+    deep = target
+    -- Skip the boolean and the target
+    target = arguments[ i ] or {}
+    i = i+1
+  end
+  -- Handle case when target is a string or something (possible in deep copy)
+  if type(target)~='table' then
+    target = {}
+  end
+  for j=i, length do
+    -- Only deal with non-null/undefined values
+    options = arguments[ j ]
+    if options~=nil then
+      -- Extend the base object
+      for name, copy in pairs(options) do
+        src = target[ name ]
+        -- Prevent never-ending loop
+        if target~=copy then
+          -- Recurse if we're merging plain objects or arrays
+          if deep and copy and type(copy)=='table' then
+            clone = src or {}
+            -- Never move original objects, clone them
+            target[ name ] = N.extend( deep, clone, copy )
+          -- Don't bring in undefined values
+          elseif copy~=nil then
+            target[ name ] = copy
           end
         end
       end
     end
-    -- Return the modified object
-    return target
-  end,
-}
+  end
+  -- Return the modified object
+  return target
+end
 
 N.Code = {}
 N.Code.new = function(code)
@@ -228,15 +229,6 @@ N.Pastebin.new = function()
   obj.remoterepo = N.IODataBase.new():init(obj.dbinit):fromCode(obj.remoterepocode)
   return setmetatable(obj, {__index = N.Pastebin})
 end
-N.Pastebin.update = function(this, ...)
-  local updates = {this.remoterepo:get(...)}
-  for _,updatel in ipairs(updates) do
-    for update,entry in pairs(updatel) do
-      N.Code.new():fromGet('http://pastebin.com/raw/'..entry.id):save(entry.name)
-    end
-  end
-  return this
-end
 N.Pastebin.fetch = function(this)
   this.remoterepo:clear()
   local remoteRepoCode = N.Code.new():fromPost(
@@ -263,13 +255,30 @@ N.Pastebin.fetch = function(this)
   end
   return this
 end
-N.Pastebin.add = function(this, add)
-  this.localrepo:insert(this.remoterepo:get(add))
-  this.localrepo:save(this.localrepocode)
+N.Pastebin.exists = function(this, filter)
+  return this.localrepo:exists(filter)
+end
+N.Pastebin.get = function(this, filter)
+  return this.localrepo:get(filter)
+end
+N.Pastebin.code = function(this, filter)
+  this:merge(filter)
+  local codes = {}
+  local entries = this.localrepo:get(filter)
+  for _,entry in ipairs(entries) do
+    codes[entry.name] = N.Code.new():fromFile(N.Reference.localRepo..entry.name)
+  end
+  return codes
+end
+N.Pastebin.add = function(this, filter)
+  if this.localrepo:exists(filter) then
+    this.localrepo:insert(this.remoterepo:get(filter))
+    this.localrepo:save(this.localrepocode)
+  end
   return this
 end
-N.Pastebin.rm = function(this, rm)
-  local rms = this.remoterepo:get(rm)
+N.Pastebin.rm = function(this, filter)
+  local rms = this.remoterepo:get(filter)
   for rm,entry in pairs(rms) do
     N.Code.new():bind(N.Reference.localRepo..entry.name):delete()
   end
@@ -277,19 +286,19 @@ N.Pastebin.rm = function(this, rm)
   this.localrepo:save(this.localrepocode)
   return this
 end
-N.Pastebin.merge = function(this)
+N.Pastebin.merge = function(this, filter)
   local remoteentries = this.remoterepo:get()
-  local localentries = this.localrepo:get()
+  local localentries = this.localrepo:get(filter)
   for i,localentry in pairs(localentries) do
     local remoteentry = remoteentries[i]
     if remoteentry.version~=localentry.version then
       N.Code.new():fromGet('http://pastebin.com/raw/'..localentry.id):save(N.Reference.localRepo..localentry.name)
       this.localrepo:insert{remoteentry}
+      this.localrepo:save(this.localrepocode)
     else
       N.Code.new():fromFile(N.Reference.localRepo..localentry.name):fromGet('http://pastebin.com/raw/'..localentry.id):save()
     end
   end
-  this.localrepo:save(this.localrepocode)
   return this
 end
 
@@ -467,6 +476,12 @@ N.DataBase.get = function(this, gets)
     return row2
   end
 end
+N.DataBase.exists = function(this, filter)
+  if this.db then
+    return #this:get(filter)>0
+  end
+  return false
+end
 N.DataBase.rm = function(this, rms)
   if this.db then
     local rows = this:_search(rms)
@@ -483,7 +498,7 @@ N.DataBase.rm = function(this, rms)
   return this
 end
 N.DataBase.copy = function(this, from, deep)
-  N.Util.extend(not not deep, this.db, from.db)
+  N.extend(deep==true, this.db, from.db)
 end
 N.DataBase.link = function(this, from)
   this.db = from.db
@@ -514,7 +529,7 @@ N.IODataBase.new = function()
 end
 N.IODataBase.fromCode = function(this, code)
   if code:exists() then
-    N.Util.extend(this.db.data, N.Lib.JSON:decode(code:get()))
+    N.extend(this.db.data, N.Lib.JSON:decode(code:get()))
   end
   return this
 end
@@ -526,3 +541,19 @@ N.IODataBase.save = function(this, code)
   end
   return this
 end
+
+N.repo = N.Pastbin.new():fetch()
+N.apps = {}
+N.import = function(filter)
+  if type(filter)=="string" then
+    filter = {{name = filter}}
+  end
+  local codes = N.repo:code(filter)
+  for name,code in ipairs(codes) do
+    N.apps[name] = code:api()
+  end
+  return N
+end
+
+setmetatable(N, {__index = N.apps})
+getfenv(0).N = N
