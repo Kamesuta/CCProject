@@ -542,7 +542,7 @@ N.IODataBase.save = function(this, code)
   return this
 end
 
-N.repo = N.Pastbin.new():fetch()
+N.repo = N.Pastebin.new():fetch()
 N.apps = {}
 N.import = function(filter)
   if type(filter)=="string" then
