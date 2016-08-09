@@ -549,7 +549,7 @@ N.import = function(filter)
     filter = {{name = filter}}
   end
   local codes = N.repo:code(filter)
-  for name,code in ipairs(codes) do
+  for name,code in pairs(codes) do
     N.apps[name] = code:api()
   end
   return N
