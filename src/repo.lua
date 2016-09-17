@@ -11,7 +11,6 @@
 - [-merge] update worktree from local repository
 - [-add] add to index
 - [-get] add and merge
-- [-pull] fetch and get
 - [-init] get this file!
 
 ## Installation
@@ -633,6 +632,13 @@ if #args>0 then
     local fh = fs.open('N', 'w')
     fh.write('shell.run("'..N.Util.abspath'N'..'", ...)')
     fh.close()
+  elseif args[1] == '-list' then
+    local entries = N.repo:entry()
+    local list = {}
+    for _,entry in ipairs(entries) do
+      table.insert(list, entry.name)
+    end
+    print(N.Util.join(list, ' '))
   elseif args[1] == '-fetch' then
     N.repo:fetch()
   elseif args[1] == '-merge' then
@@ -644,10 +650,6 @@ if #args>0 then
   elseif args[1] == '-get' then
     if args[2] then
       N.repo:get{{name = args[2]}}
-    end
-  elseif args[1] == '-pull' then
-    if args[2] then
-      N.repo:pull{{name = args[2]}}
     end
   elseif args[1] == '-run' then
     if args[2] then
