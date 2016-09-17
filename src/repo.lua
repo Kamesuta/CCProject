@@ -1,4 +1,4 @@
-if not type(getfenv(0).N) then
+if type(getfenv(0).N)~='table' then
   local N = {}
 
   N.Reference = {
@@ -164,7 +164,7 @@ if not type(getfenv(0).N) then
       local p = path or this.file
       if p~=this.from then
         if p then
-          local dir,name = p:match("^(.*/)(.-)$")
+          local dir,name = p:match('^(.*/)(.-)$')
           if not fs.exists(dir) then
             fs.makeDir(dir)
           end
@@ -173,7 +173,7 @@ if not type(getfenv(0).N) then
             file.write(this.code)
             file.close()
           else
-            error("non-directory file exsists", 2)
+            error('non-directory file exsists', 2)
           end
         end
       end
@@ -559,7 +559,7 @@ if not type(getfenv(0).N) then
   N.repo = N.Pastebin.new():fetch()
   N.apps = {}
   N.import = function(filter)
-    if type(filter)=="string" then
+    if type(filter)=='string' then
       filter = {{name = filter}}
     end
     local codes = N.repo:code(filter)
@@ -575,20 +575,20 @@ end
 
 local args = {...}
 if #args>0 then
-  if args[1] == "-fetch" then
+  if args[1] == '-fetch' then
     N.repo:fetch()
-  elseif args[1] == "-merge" then
+  elseif args[1] == '-merge' then
     N.repo:merge()
-  elseif args[1] == "-add" then
+  elseif args[1] == '-add' then
     if args[2] then
       N.repo:add({name = args[2]})
     end
-  elseif args[1] == "-pull" then
+  elseif args[1] == '-pull' then
     if args[2] then
       N.repo:add({name = args[2]})
       N.repo:merge()
     end
-  elseif args[1] == "-run" then
+  elseif args[1] == '-run' then
     if args[2] then
       local codes = N.repo:code({name = args[2]})
       local runargs = N.Util.merge({}, args)
