@@ -581,16 +581,16 @@ if #args>0 then
     N.repo:merge()
   elseif args[1] == '-add' then
     if args[2] then
-      N.repo:add({name = args[2]})
+      N.repo:add{{name = args[2]}}
     end
   elseif args[1] == '-pull' then
     if args[2] then
-      N.repo:add({name = args[2]})
+      N.repo:add{{name = args[2]}}
       N.repo:merge()
     end
   elseif args[1] == '-run' then
     if args[2] then
-      local codes = N.repo:code({name = args[2]})
+      local codes = N.repo:code{{name = args[2]}}
       local runargs = N.Util.merge({}, args)
       table.remove(runargs,1)
       table.remove(runargs,1)
