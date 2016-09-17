@@ -7,7 +7,7 @@ if type(getfenv(0).N)~='table' then
     remoteDB = '.bnn/remote.json',
     localDB = '.bnn/local.json',
     dev_key = '8eb670559bf070612041dc14d0502248',
-    user_key = 'd7f12b0137d6ba187cef85295ca646b7',
+    user_key = 'c244f544f85e867092d55a7b9d468d8f',
   }
 
   N.Util = {
