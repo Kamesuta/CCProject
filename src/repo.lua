@@ -630,7 +630,9 @@ local args = {...}
 if #args>0 then
   if args[1] == '-init' then
     N.repo:get{{name = 'N'}}
-    fs.copy(N.Util.abspath'N', 'N')
+    local fh = fs.open('N', 'w')
+    fh.write('shell.run("'..N.Util.abspath'N'..'", ...)')
+    fh.close()
   elseif args[1] == '-fetch' then
     N.repo:fetch()
   elseif args[1] == '-merge' then
