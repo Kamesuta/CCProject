@@ -6,12 +6,14 @@
 ########################
 
 # Usage
-- [-run] add and merge and run!
+- [-init] get this file!
+- [-list] list local repository
+- [-remote] list remote repository
 - [-fetch] update local repository
 - [-merge] update worktree from local repository
 - [-add] add to index
 - [-get] add and merge
-- [-init] get this file!
+- [-run] add and merge and run!
 
 ## Installation
   pastebin run BUMK9sYW -init
@@ -648,7 +650,7 @@ if type(getfenv(0).N)~='table' or getfenv(0).N.reload then
     return N
   end
 
-  local completeNOptions = {'-init ', '-list ', '-remote ', '-fetch ', '-merge ', '-add ', '-get ', '-run '}
+  local completeNOptions = {'-init', '-list', '-remote', '-fetch', '-merge', '-add ', '-get ', '-run '}
   local completeN = function(shell, nIndex, sText, tPreviousText)
     if nIndex == 1 then
       return N.Util.completeMultipleChoice(sText, completeNOptions)
