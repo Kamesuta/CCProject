@@ -318,10 +318,12 @@ if type(getfenv(0).N)~='table' then
   N.Pastebin.pull = function(this, filter)
     this:fetch()
     this:get(filter)
+    return this
   end
   N.Pastebin.get = function(this, filter)
     this:add(filter)
     this:merge(filter)
+    return this
   end
 
   N.DataBase = {}
