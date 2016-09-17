@@ -1,3 +1,29 @@
+--[[
+########################
+# b7n's Repository
+      :Composer of b7n
+        created by b7n
+########################
+
+# Usage
+- [-run] add and merge and run!
+- [-fetch] update local repository
+- [-merge] update worktree from local repository
+- [-add] add to index
+- [-get] add and merge
+- [-pull] fetch and get
+- [-init] get this file!
+
+## Installation
+  pastebin run BUMK9sYW -init
+
+# APIUsage: Write this code in your programs and you can b7n's All APIs!
+## Init of N
+  if not fs.exists'N' then shell.run('pastebin','run','BUMK9sYW','-init') end dofile'N'
+## Import Library
+  N.import'<filename>'
+  N.<filename>.<something in filename's global environment>
+--]]
 if type(getfenv(0).N)~='table' then
   local N = {}
 
@@ -585,7 +611,9 @@ end
 
 local args = {...}
 if #args>0 then
-  if args[1] == '-fetch' then
+  if args[1] == '-init' then
+    N.repo:get{{name = 'N'}}
+  elseif args[1] == '-fetch' then
     N.repo:fetch()
   elseif args[1] == '-merge' then
     N.repo:merge()
