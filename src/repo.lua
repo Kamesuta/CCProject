@@ -30,6 +30,7 @@ if type(getfenv(0).N)~='table' then
   N.Reference = {
     localRepo = 'bnn/',
     localSystem = '.bnn/',
+    remoteRepo = 'http://pastebin.com/raw/',
     remoteDB = '.bnn/remote.json',
     localDB = '.bnn/local.json',
     dev_key = '8eb670559bf070612041dc14d0502248',
@@ -61,6 +62,12 @@ if type(getfenv(0).N)~='table' then
       end
 
       return first
+    end,
+    abspath = function(name)
+      return N.Reference.localRepo..name
+    end,
+    absurl = function(id)
+      return N.Reference.remoteRepo..id
     end
   }
 
@@ -246,8 +253,8 @@ if type(getfenv(0).N)~='table' then
   end
 
   N.Lib = {
-    XML = N.Code.new():fromFile(N.Reference.localSystem..'xml.lua'):fromGet('http://pastebin.com/raw/cFDg20XW'):save():execute(),
-    JSON = N.Code.new():fromFile(N.Reference.localSystem..'json.lua'):fromGet('http://pastebin.com/raw/4YncwwC6'):save():execute(),
+    XML = N.Code.new():fromFile(N.Reference.localSystem..'xml.lua'):fromGet(N.Util.absurl'cFDg20XW'):save():execute(),
+    JSON = N.Code.new():fromFile(N.Reference.localSystem..'json.lua'):fromGet(N.Util.absurl'4YncwwC6'):save():execute(),
   }
 
   N.Pastebin = {}
@@ -297,7 +304,7 @@ if type(getfenv(0).N)~='table' then
   N.Pastebin.exists = function(this, filter)
     return this.localrepo:exists(filter)
   end
-  N.Pastebin.info = function(this, filter)
+  N.Pastebin.entry = function(this, filter)
     return this.localrepo:get(filter)
   end
   N.Pastebin.code = function(this, filter)
@@ -309,6 +316,16 @@ if type(getfenv(0).N)~='table' then
       codes[entry.name] = N.Code.new():fromFile(N.Reference.localRepo..entry.name)
     end
     return codes
+  end
+  N.Pastebin.path = function(this, filter)
+    this:add(filter)
+    this:merge(filter)
+    local paths = {}
+    local entries = this.localrepo:get(filter)
+    for _,entry in ipairs(entries) do
+      paths[entry.name] = N.Util.abspath(entry.name)
+    end
+    return paths
   end
   N.Pastebin.add = function(this, filter)
     if not this.localrepo:exists(filter) then
@@ -332,11 +349,11 @@ if type(getfenv(0).N)~='table' then
     for i,localentry in pairs(localentries) do
       local remoteentry = remoteentries[i]
       if remoteentry.version~=localentry.version then
-        N.Code.new():fromGet('http://pastebin.com/raw/'..localentry.id):save(N.Reference.localRepo..localentry.name)
+        N.Code.new():fromGet(N.Util.absurl(localentry.id)):save(N.Reference.localRepo..localentry.name)
         this.localrepo:insert{remoteentry}
         this.localrepo:save(this.localrepocode)
       else
-        N.Code.new():fromFile(N.Reference.localRepo..localentry.name):fromGet('http://pastebin.com/raw/'..localentry.id):save()
+        N.Code.new():fromFile(N.Reference.localRepo..localentry.name):fromGet(N.Util.absurl(localentry.id)):save()
       end
     end
     return this
