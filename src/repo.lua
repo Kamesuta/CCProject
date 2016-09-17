@@ -23,8 +23,10 @@
   N.import'<filename>'
   N.<filename>.<something in filename's global environment>
 --]]
-if type(getfenv(0).N)~='table' then
-  local N = {}
+if type(getfenv(0).N)~='table' or getfenv(0).N.reload then
+  local N = {
+    reload = false
+  }
 
   N.Reference = {
     localRepo = 'bnn/',
@@ -646,17 +648,17 @@ if type(getfenv(0).N)~='table' then
     return N
   end
 
-  N.completeNOptions = {'-init ', '-list ', '-remote ', '-fetch ', '-merge ', '-add ', '-get ', '-run '}
-  N.completeN = function(shell, nIndex, sText, tPreviousText)
+  local completeNOptions = {'-init ', '-list ', '-remote ', '-fetch ', '-merge ', '-add ', '-get ', '-run '}
+  local completeN = function(shell, nIndex, sText, tPreviousText)
     if nIndex == 1 then
-      return N.Util.completeMultipleChoice(sText, N.completeNOptions)
+      return N.Util.completeMultipleChoice(sText, completeNOptions)
     elseif nIndex == 2 then
       if tPreviousText[2] == '-add' or tPreviousText[2] == '-get' or tPreviousText[2] == '-run' then
         return N.Util.completeMultipleChoice(sText, N.Util.collectTable(N.repo:remoteentry(), 'name'))
       end
     end
   end
-  shell.setCompletionFunction('N', N.completeN)
+  shell.setCompletionFunction('N', completeN)
 
   setmetatable(N, {__index = N.apps})
   getfenv(0).N = N
@@ -665,10 +667,16 @@ end
 local args = {...}
 if #args>0 then
   if args[1] == '-init' then
-    N.repo:get{{name = 'N'}}
-    local fh = fs.open('N', 'w')
-    fh.write('shell.run("'..N.Util.abspath'N'..'", ...)')
-    fh.close()
+    N.reload = true
+    local codes = N.repo:code{{name = 'N'}}
+    for _,code in pairs(codes) do
+      code:invoke()
+    end
+    if not fs.exists('N') then
+      local fh = fs.open('N', 'w')
+      fh.write('shell.run("'..N.Util.abspath'N'..'", ...)')
+      fh.close()
+    end
   elseif args[1] == '-list' then
     print(N.Util.join(N.Util.collectTable(N.repo:localentry(), 'name'), ' '))
   elseif args[1] == '-remote' then
@@ -691,8 +699,8 @@ if #args>0 then
       local runargs = N.Util.merge({}, args)
       table.remove(runargs,1)
       table.remove(runargs,1)
-      for name,code in pairs(codes) do
-        code:invoke(runargs)
+      for _,code in pairs(codes) do
+        code:invoke(unpack(runargs))
       end
     end
   end
