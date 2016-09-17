@@ -271,7 +271,7 @@ if type(getfenv(0).N)~='table' then
   N.Pastebin.exists = function(this, filter)
     return this.localrepo:exists(filter)
   end
-  N.Pastebin.get = function(this, filter)
+  N.Pastebin.info = function(this, filter)
     return this.localrepo:get(filter)
   end
   N.Pastebin.code = function(this, filter)
@@ -314,6 +314,14 @@ if type(getfenv(0).N)~='table' then
       end
     end
     return this
+  end
+  N.Pastebin.pull = function(this, filter)
+    this:fetch()
+    this:get(filter)
+  end
+  N.Pastebin.get = function(this, filter)
+    this:add(filter)
+    this:merge(filter)
   end
 
   N.DataBase = {}
@@ -583,10 +591,13 @@ if #args>0 then
     if args[2] then
       N.repo:add{{name = args[2]}}
     end
+  elseif args[1] == '-get' then
+    if args[2] then
+      N.repo:get{{name = args[2]}}
+    end
   elseif args[1] == '-pull' then
     if args[2] then
-      N.repo:add{{name = args[2]}}
-      N.repo:merge()
+      N.repo:pull{{name = args[2]}}
     end
   elseif args[1] == '-run' then
     if args[2] then
