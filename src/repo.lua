@@ -62,6 +62,28 @@ if type(getfenv(0).N)~='table' then
 
       return first
     end,
+    collectTable = function(tbs, name)
+      local list = {}
+      for _,tb in ipairs(tbs) do
+        table.insert(list, tb[name])
+      end
+      return list
+    end,
+    completeMultipleChoice = function(sText, tOptions, bAddSpaces)
+      local tResults = {}
+      for n=1,#tOptions do
+        local sOption = tOptions[n]
+        if #sOption + (bAddSpaces and 1 or 0) > #sText and string.sub( sOption, 1, #sText ) == sText then
+          local sResult = string.sub( sOption, #sText + 1 )
+          if bAddSpaces then
+            table.insert( tResults, sResult .. ' ' )
+          else
+            table.insert( tResults, sResult )
+          end
+        end
+      end
+      return tResults
+    end,
     abspath = function(name)
       return N.Reference.localRepo..name
     end,
@@ -303,8 +325,11 @@ if type(getfenv(0).N)~='table' then
   N.Pastebin.exists = function(this, filter)
     return this.localrepo:exists(filter)
   end
-  N.Pastebin.entry = function(this, filter)
+  N.Pastebin.localentry = function(this, filter)
     return this.localrepo:get(filter)
+  end
+  N.Pastebin.remoteentry = function(this, filter)
+    return this.remoterepo:get(filter)
   end
   N.Pastebin.code = function(this, filter)
     this:add(filter)
@@ -621,6 +646,18 @@ if type(getfenv(0).N)~='table' then
     return N
   end
 
+  N.completeNOptions = {'-init ', '-list ', '-remote ', '-fetch ', '-merge ', '-add ', '-get ', '-run '}
+  N.completeN = function(shell, nIndex, sText, tPreviousText)
+    if nIndex == 1 then
+      return N.Util.completeMultipleChoice(sText, N.completeNOptions)
+    elseif nIndex == 2 then
+      if tPreviousText[2] == '-add' or tPreviousText[2] == '-get' or tPreviousText[2] == '-run' then
+        return N.Util.completeMultipleChoice(sText, N.Util.collectTable(N.repo:remoteentry(), 'name'))
+      end
+    end
+  end
+  shell.setCompletionFunction('N', N.completeN)
+
   setmetatable(N, {__index = N.apps})
   getfenv(0).N = N
 end
@@ -633,12 +670,9 @@ if #args>0 then
     fh.write('shell.run("'..N.Util.abspath'N'..'", ...)')
     fh.close()
   elseif args[1] == '-list' then
-    local entries = N.repo:entry()
-    local list = {}
-    for _,entry in ipairs(entries) do
-      table.insert(list, entry.name)
-    end
-    print(N.Util.join(list, ' '))
+    print(N.Util.join(N.Util.collectTable(N.repo:localentry(), 'name'), ' '))
+  elseif args[1] == '-remote' then
+    print(N.Util.join(N.Util.collectTable(N.repo:remoteentry(), 'name'), ' '))
   elseif args[1] == '-fetch' then
     N.repo:fetch()
   elseif args[1] == '-merge' then
