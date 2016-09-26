@@ -37,7 +37,6 @@ if type(getfenv(0).N)~='table' or getfenv(0).N.reload then
     remoteDB = '.bnn/remote.json',
     localDB = '.bnn/local.json',
     dev_key = '8eb670559bf070612041dc14d0502248',
-    user_key = 'c244f544f85e867092d55a7b9d468d8f',
   }
 
   N.Util = {
@@ -262,14 +261,14 @@ if type(getfenv(0).N)~='table' or getfenv(0).N.reload then
       local fnAPI, err = this:loadcode()
       if fnAPI then
         setfenv( fnAPI, tEnv )
-        fnAPI(...)
+        local ret = fnAPI(...)
 
         local tAPI = {}
         for k,v in pairs( tEnv ) do
           tAPI[k] =  v
         end
 
-        return tAPI
+        return tAPI, ret
       end
     end
   end
@@ -281,6 +280,8 @@ if type(getfenv(0).N)~='table' or getfenv(0).N.reload then
     XML = N.Code.new():fromFile(N.Reference.localSystem..'xml.lua'):fromGet(N.Util.absurl'cFDg20XW'):save():execute(),
     JSON = N.Code.new():fromFile(N.Reference.localSystem..'json.lua'):fromGet(N.Util.absurl'4YncwwC6'):save():execute(),
   }
+  
+  N.Reference.user_key = N.Lib.JSON:decode(N.Code.new():fromGet(N.Util.absurl'4YncwwC6'):get())
 
   N.Pastebin = {}
   N.Pastebin.new = function()
@@ -385,6 +386,18 @@ if type(getfenv(0).N)~='table' or getfenv(0).N.reload then
       end
     end
     return this
+  end
+  N.Pastebin.diff = function(this, filter)
+    local remoteentries = this.remoterepo:get()
+    local localentries = this.localrepo:get(filter)
+    local diff = {}
+    for i,localentry in pairs(localentries) do
+      local remoteentry = remoteentries[i]
+      if remoteentry.version~=localentry.version then
+        table.insert(diff, remoteentry)
+      end
+    end
+    return diff
   end
   N.Pastebin.pull = function(this, filter)
     this:fetch()
@@ -644,11 +657,31 @@ if type(getfenv(0).N)~='table' or getfenv(0).N.reload then
       filter = {{name = filter}}
     end
     local codes = N.repo:code(filter)
+    local rets = {}
     for name,code in pairs(codes) do
-      N.apps[name] = code:api()
+      local env, ret = code:api()
+      N.apps[name] = env
+      table.insert(rets, ret)
     end
-    return N
+    return unpack(rets)
   end
+  N.restart = function()
+    N.reload = true
+    local codes = N.repo:code{{name = 'N'}}
+    for _,code in pairs(codes) do
+      code:invoke()
+    end
+    if not fs.exists('N') then
+      local fh = fs.open('N', 'w')
+      fh.write('shell.run("'..N.Util.abspath'N'..'", ...)')
+      fh.close()
+    end
+  end
+
+--  if #N.repo:diff{{name = 'N'}} > 0 then
+--    N.repo:merge{{name = 'N'}}
+--    N.restart()
+--  end
 
   local completeNOptions = {'-init', '-list', '-remote', '-fetch', '-merge', '-add ', '-get ', '-run '}
   local completeN = function(shell, nIndex, sText, tPreviousText)
@@ -669,16 +702,7 @@ end
 local args = {...}
 if #args>0 then
   if args[1] == '-init' then
-    N.reload = true
-    local codes = N.repo:code{{name = 'N'}}
-    for _,code in pairs(codes) do
-      code:invoke()
-    end
-    if not fs.exists('N') then
-      local fh = fs.open('N', 'w')
-      fh.write('shell.run("'..N.Util.abspath'N'..'", ...)')
-      fh.close()
-    end
+    N.restart()
   elseif args[1] == '-list' then
     print(N.Util.join(N.Util.collectTable(N.repo:localentry(), 'name'), ' '))
   elseif args[1] == '-remote' then
